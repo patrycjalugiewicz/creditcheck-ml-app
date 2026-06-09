@@ -1,126 +1,178 @@
-# CreditCheck – predykcja decyzji kredytowej
+# CreditCheck - predykcja decyzji kredytowej
 
-## Uruchomienie aplikacji
+CreditCheck to lokalna aplikacja webowa wspierająca wstępną ocenę szans na
+uzyskanie kredytu. Użytkownik uzupełnia formularz, a aplikacja przedstawia
+przewidywaną decyzję modelu, prawdopodobieństwo akceptacji oraz komentarz do
+podanych danych.
 
-Aby uruchomić aplikację należy uruchomić plik `run.bat` znajdujący się w głównym katalogu projektu. Plik automatycznie instaluje wymagane biblioteki oraz uruchamia aplikację Streamlit.
+## Uruchomienie
 
-## Opis projektu
+### Wymagania
 
-CreditCheck to aplikacja webowa wspierająca wstępną ocenę szans na uzyskanie kredytu. Użytkownik uzupełnia formularz dotyczący swojej sytuacji finansowej oraz parametrów kredytu, a aplikacja zwraca przewidywaną decyzję: akceptacja lub odrzucenie wniosku.
+- Windows 10 lub Windows 11,
+- Python od 3.10 do 3.13 (zalecany Python 3.13),
+- połączenie z internetem podczas pierwszego uruchomienia,
+- plik modelu `model/credit_model.pkl`.
 
-Aplikacja wykorzystuje model uczenia maszynowego wytrenowany na publicznym datasetcie Loan Prediction Dataset z Kaggle.
+Python można pobrać ze strony
+[python.org](https://www.python.org/downloads/). Podczas instalacji należy
+zaznaczyć opcję `Add Python to PATH`.
 
-## Rodzaj aplikacji
+### Automatyczne uruchomienie
 
-Aplikacja webowa uruchamiana lokalnie z wykorzystaniem Streamlit.
+1. Pobierz lub sklonuj repozytorium.
+2. Uruchom plik `run.bat`.
+3. Przy pierwszym uruchomieniu skrypt:
+   - sprawdzi wersję Pythona,
+   - utworzy lokalne środowisko `.venv`,
+   - zainstaluje wersje bibliotek z `requirements.txt`,
+   - uruchomi aplikację Streamlit.
+4. Aplikacja otworzy się w przeglądarce pod adresem
+   `http://localhost:8501`.
 
-## Dataset
+Kolejne uruchomienia wykorzystują istniejące środowisko `.venv`. Jeżeli
+środowisko zostało utworzone przez niezgodną wersję Pythona, należy usunąć
+katalog `.venv` i ponownie uruchomić `run.bat`.
 
-W projekcie wykorzystano dataset Loan Prediction Dataset dostępny na Kaggle:
+### Uruchomienie ręczne
 
-https://www.kaggle.com/datasets/altruistdelhite04/loan-prediction-problem-dataset
+```powershell
+py -3.13 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m streamlit run app\streamlit_app.py
+```
 
-Dataset zawiera dane dotyczące historycznych wniosków kredytowych, m.in. dochód wnioskodawcy, dochód współwnioskodawcy, kwotę kredytu, okres kredytowania, historię kredytową, wykształcenie, liczbę osób na utrzymaniu oraz decyzję kredytową.
+## Działanie aplikacji
 
-Dane zostały oczyszczone i przygotowane na potrzeby trenowania modelu.
+Formularz pobiera informacje o wnioskodawcy i parametrach kredytu:
 
-## Model uczenia maszynowego
+- płeć,
+- stan cywilny,
+- liczbę osób na utrzymaniu,
+- wykształcenie,
+- formę zatrudnienia,
+- miesięczny dochód wnioskodawcy,
+- miesięczny dochód współwnioskodawcy,
+- kwotę i okres kredytowania,
+- historię spłaty zobowiązań,
+- lokalizację nieruchomości.
 
-Na potrzeby projektu zostanie wytrenowany model klasyfikacyjny przewidujący decyzję kredytową. Rozważane modele obejmują Logistic Regression, Random Forest oraz Gradient Boosting.
+Przed predykcją aplikacja sprawdza, czy:
 
-Po zakończeniu procesu trenowania wybrany zostanie model osiągający najlepsze wyniki.
+- dochód wnioskodawcy jest większy od zera,
+- podano dochód zadeklarowanego współwnioskodawcy,
+- kwota kredytu jest większa od zera,
+- model istnieje i wykorzystuje oczekiwany zestaw cech.
 
-## Predykcja
+Brak, uszkodzenie lub niezgodność modelu powoduje wyświetlenie komunikatu
+błędu. Aplikacja nie generuje w takim przypadku wyniku demonstracyjnego.
 
-Aplikacja przewiduje, czy wniosek kredytowy użytkownika prawdopodobnie zostałby zaakceptowany czy odrzucony.
+## Model i dane
 
-Wynik aplikacji:
-- decyzja: zaakceptowany / odrzucony,
-- prawdopodobieństwo akceptacji,
-- krótka interpretacja możliwych czynników wpływających na wynik.
+Do uzupelnienia
 
-## Wektor wejściowy modelu
+### Wektor wejściowy
 
-Model przyjmuje następujące cechy:
+Do uzupelnienia
 
-- Gender
-- Married
-- Dependents
-- Education
-- Self_Employed
-- ApplicantIncome
-- CoapplicantIncome
-- LoanAmount
-- Loan_Amount_Term
-- Credit_History
-- Property_Area
+### Wektor wyjściowy
 
-## Wektor wyjściowy modelu
+Do uzupelnienia
 
-Model zwraca przewidywaną decyzję kredytową:
+## Architektura
 
-- Y / 1 – wniosek zaakceptowany,
-- N / 0 – wniosek odrzucony.
+Projekt jest podzielony na trzy obszary:
 
-Jeżeli model obsługuje `predict_proba`, aplikacja pokazuje również prawdopodobieństwo akceptacji.
+- `data` - dane surowe i przetworzone,
+- `model` - preprocessing, trening i zapis modelu,
+- `app` - formularz Streamlit, integracja z modelem i prezentacja wyniku.
+
+```text
+creditcheck-ml-app/
+|-- app/
+|   |-- __init__.py
+|   `-- streamlit_app.py
+|-- data/
+|   |-- raw/
+|   `-- processed/
+|-- docs/
+|   `-- Dokumentacja.docx
+|-- model/
+|   |-- credit_model.pkl
+|   `-- train_model.py
+|-- tests/
+|   `-- test_model_integration.py
+|-- .gitignore
+|-- README.md
+|-- requirements.txt
+`-- run.bat
+```
+
+## Testowanie i jakość kodu
+
+Testy integracyjne sprawdzają między innymi:
+
+- zgodność kodowania formularza z modelem,
+- wykonanie predykcji na rzeczywistym pliku `.pkl`,
+- brak, uszkodzenie i niezgodność modelu,
+- błędy predykcji,
+- walidację danych formularza.
+
+Uruchomienie testów:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
+
+Sprawdzenie kodu:
+
+```powershell
+.\.venv\Scripts\python.exe -m pylint app\streamlit_app.py model\train_model.py tests\test_model_integration.py
+```
+
+W ostatniej lokalnej weryfikacji projekt uzyskał wynik pylint powyżej
+wymaganego progu 8 punktów.
+
+## System testowy i ograniczenia
+
+Aplikację przetestowano lokalnie na:
+
+- Windows 11,
+- Python 3.13,
+- Streamlit 1.41.1,
+- scikit-learn 1.6.1.
+
+Aplikacja jest przeznaczona do uruchamiania lokalnego na Windows. Nie była
+testowana na Linuxie, macOS etc. Pierwsze uruchomienie wymaga internetu w celu pobrania bibliotek.
+
 
 ## Technologie
 
-- Python
-- Streamlit
-- pandas
-- scikit-learn
-- joblib
-- GitHub
-
-## System testowy
-
-Aplikacja była testowana na:
-
-- Windows 11
-- Python 3.14
-- Google Chrome
-- Opera GX
-
-
-Aplikacja powinna działać również na innych wersjach systemu Windows, np. Windows 10. Aplikacja nie jest przewidziana jako natywna aplikacja mobilna.
+- Python,
+- Streamlit,
+- pandas,
+- NumPy,
+- scikit-learn,
+- joblib,
+- Git i GitHub.
 
 ## Podział pracy
 
-### Piotr Balcerzak
-- przygotowanie i analiza datasetu,
-- preprocessing danych,
-- trenowanie modeli uczenia maszynowego,
-- porównanie skuteczności modeli,
-- wybór najlepszego modelu,
-- zapis modelu do pliku .pkl.
+### Osoba 1 - Piotr Balcerzak
 
-### Patrycja Ługiewicz
-- utworzenie i konfiguracja repozytorium GitHub,
+- przygotowanie i preprocessing datasetu,
+- analiza danych i wizualizacja wybranych zależności,
+- implementacja i trenowanie modeli uczenia maszynowego,
+- porównanie skuteczności modeli i wybór najlepszego rozwiązania,
+- zapis wytrenowanego modelu do pliku `.pkl`,
+- przygotowanie dokumentacji modelu i analizy danych.
+
+### Osoba 2 - Patrycja Ługiewicz
+
+- utworzenie i konfiguracja repozytorium Git,
 - przygotowanie struktury projektu,
 - implementacja aplikacji webowej w Streamlit,
-- stworzenie formularza użytkownika,
-- integracja aplikacji z modelem,
-- przygotowanie README,
-- przygotowanie dokumentacji PDF,
-- przygotowanie prezentacji projektu.
-
-## Struktura projektu
-
-```txt
-creditcheck-ml-app/
-├── app/
-│   └── streamlit_app.py
-├── data/
-│   ├── raw/
-│   └── processed/
-├── model/
-│   ├── credit_model.pkl
-│   ├── train_model.py
-│   └── predict.py
-├── docs/
-│   └── documentation.pdf
-├── requirements.txt
-├── run.bat
-├── README.md
-└── .gitignore
+- przygotowanie formularza i integracja aplikacji z modelem,
+- prezentacja wyniku i komunikatów interpretacyjnych,
+- obsługa błędów i testy integracyjne,
+- przygotowanie README, dokumentacji aplikacji oraz prezentacji projektu.

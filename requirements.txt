@@ -1,7 +1,10 @@
-streamlit
-pandas
-numpy
-scikit-learn
-joblib
-matplotlib
-pylint
+# Supported Python versions: 3.10-3.13
+streamlit==1.41.1
+pandas==2.2.3
+numpy==2.2.2
+scipy==1.15.1
+scikit-learn==1.6.1
+joblib==1.4.2
+matplotlib==3.10.0
+pylint==3.3.4
+threadpoolctl==3.5.0

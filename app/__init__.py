@@ -1,0 +1,1 @@
+"""CreditCheck application package."""

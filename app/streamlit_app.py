@@ -1,5 +1,6 @@
 """Aplikacja Streamlit do predykcji decyzji kredytowej."""
 
+import logging
 from pathlib import Path
 
 import joblib
@@ -7,35 +8,154 @@ import pandas as pd
 import streamlit as st
 
 
-MODEL_PATH = Path("model/credit_model.pkl")
+LOGGER = logging.getLogger(__name__)
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+MODEL_PATH = PROJECT_ROOT / "model" / "credit_model.pkl"
+
+FEATURE_NAMES = [
+    "Gender",
+    "Married",
+    "Dependents",
+    "Education",
+    "Self_Employed",
+    "ApplicantIncome",
+    "CoapplicantIncome",
+    "LoanAmount",
+    "Loan_Amount_Term",
+    "Credit_History",
+    "Property_Area",
+]
+
+# LabelEncoder sorts category names alphabetically before assigning numbers.
+CATEGORY_ENCODINGS = {
+    "Gender": {"Female": 0, "Male": 1},
+    "Married": {"No": 0, "Yes": 1},
+    "Dependents": {"0": 0, "1": 1, "2": 2, "3+": 3},
+    "Education": {"Graduate": 0, "Not Graduate": 1},
+    "Self_Employed": {"No": 0, "Yes": 1},
+    "Property_Area": {"Rural": 0, "Semiurban": 1, "Urban": 2},
+}
 
 
-def load_model():
-    """Wczytuje wytrenowany model, jeżeli plik istnieje."""
-    if MODEL_PATH.exists():
-        return joblib.load(MODEL_PATH)
-    return None
+class ModelLoadError(RuntimeError):
+    """Błąd uniemożliwiający bezpieczne wczytanie modelu."""
+
+
+class PredictionError(RuntimeError):
+    """Błąd uniemożliwiający wykonanie predykcji."""
+
+
+def load_model(model_path=MODEL_PATH):
+    """Wczytuje model i sprawdza jego zgodność z aplikacją."""
+    if not model_path.is_file():
+        raise ModelLoadError(
+            "Nie znaleziono pliku modelu `model/credit_model.pkl`. "
+            "Predykcja jest obecnie niedostępna."
+        )
+
+    try:
+        model = joblib.load(model_path)
+    except Exception as error:  # Model files can fail with library-specific errors.
+        LOGGER.exception("Nie udało się wczytać modelu z %s", model_path)
+        raise ModelLoadError(
+            "Nie udało się wczytać modelu. Plik może być uszkodzony albo "
+            "niezgodny z zainstalowaną wersją bibliotek."
+        ) from error
+
+    if not callable(getattr(model, "predict", None)):
+        raise ModelLoadError(
+            "Wczytany plik nie zawiera obsługiwanego modelu predykcyjnego."
+        )
+
+    model_feature_names = getattr(model, "feature_names_in_", None)
+    if model_feature_names is None or list(model_feature_names) != FEATURE_NAMES:
+        raise ModelLoadError(
+            "Wczytany model jest niezgodny z aplikacją. "
+            "Model wykorzystuje inny zestaw lub kolejność cech."
+        )
+
+    return model
 
 
 def prepare_input_data(form_data):
     """Przygotowuje dane wejściowe w formacie zgodnym z modelem."""
-    return pd.DataFrame(
+    input_data = pd.DataFrame(
         [
             {
-                "Gender": "Male",
-                "Married": form_data["married"],
-                "Dependents": form_data["dependents"],
-                "Education": form_data["education"],
-                "Self_Employed": form_data["self_employed"],
+                "Gender": CATEGORY_ENCODINGS["Gender"][form_data["gender"]],
+                "Married": CATEGORY_ENCODINGS["Married"][form_data["married"]],
+                "Dependents": CATEGORY_ENCODINGS["Dependents"][
+                    form_data["dependents"]
+                ],
+                "Education": CATEGORY_ENCODINGS["Education"][
+                    form_data["education"]
+                ],
+                "Self_Employed": CATEGORY_ENCODINGS["Self_Employed"][
+                    form_data["self_employed"]
+                ],
                 "ApplicantIncome": form_data["applicant_income"],
                 "CoapplicantIncome": form_data["coapplicant_income"],
                 "LoanAmount": form_data["loan_amount"],
                 "Loan_Amount_Term": form_data["loan_term"],
                 "Credit_History": form_data["credit_history"],
-                "Property_Area": form_data["property_area"],
+                "Property_Area": CATEGORY_ENCODINGS["Property_Area"][
+                    form_data["property_area"]
+                ],
             }
-        ]
+        ],
+        columns=FEATURE_NAMES,
     )
+    return input_data
+
+
+def get_acceptance_probability(model, input_data):
+    """Return the probability for the class representing acceptance."""
+    if not hasattr(model, "predict_proba"):
+        return None
+
+    classes = list(model.classes_)
+    accepted_class = 1 if 1 in classes else "Y"
+    if accepted_class not in classes:
+        return None
+
+    accepted_class_index = classes.index(accepted_class)
+    return model.predict_proba(input_data)[0][accepted_class_index]
+
+
+def predict_credit_decision(model, form_data):
+    """Wykonuje predykcję i zamienia błędy modelu na błąd aplikacji."""
+    try:
+        input_data = prepare_input_data(form_data)
+        prediction = model.predict(input_data)[0]
+        probability = get_acceptance_probability(model, input_data)
+    except Exception as error:  # Estimators can raise library-specific errors.
+        LOGGER.exception("Nie udało się wykonać predykcji")
+        raise PredictionError(
+            "Nie udało się obliczyć predykcji. Sprawdź zgodność modelu "
+            "z aplikacją i spróbuj ponownie."
+        ) from error
+
+    return prediction, probability
+
+
+def validate_form_data(form_data):
+    """Zwraca komunikaty dla danych, które nie pozwalają na predykcję."""
+    errors = []
+
+    if form_data["applicant_income"] <= 0:
+        errors.append("Dochód wnioskodawcy musi być większy od zera.")
+
+    if form_data["has_coapplicant"] and form_data["coapplicant_income"] <= 0:
+        errors.append(
+            "Podaj dochód współwnioskodawcy albo zaznacz brak "
+            "współwnioskodawcy."
+        )
+
+    if form_data["loan_amount_full"] <= 0:
+        errors.append("Wnioskowana kwota kredytu musi być większa od zera.")
+
+    return errors
 
 
 def generate_comments(form_data):
@@ -102,8 +222,16 @@ def show_result(prediction, probability, comments):
             "Szacowane prawdopodobieństwo akceptacji",
             f"{probability:.0%}",
         )
+        st.caption(
+            "Wartość oznacza ocenę modelu dla podanych danych, a nie "
+            "gwarancję uzyskania kredytu."
+        )
 
-    st.subheader("Najważniejsze czynniki wpływające na wynik")
+    st.subheader("Komentarz do podanych danych")
+    st.caption(
+        "Komentarze mają charakter informacyjny i nie są pełnym "
+        "wyjaśnieniem sposobu działania modelu."
+    )
     for comment in comments:
         st.write(f"• {comment}")
 
@@ -112,11 +240,26 @@ def get_applicant_data():
     """Pobiera dane wnioskodawcy z formularza."""
     st.header("Dane wnioskodawcy")
 
+    gender_label = st.radio(
+        "Płeć",
+        ["Kobieta", "Mężczyzna"],
+        horizontal=True,
+    )
+    gender = "Female" if gender_label == "Kobieta" else "Male"
+
+    married_label = st.radio(
+        "Czy pozostajesz w związku małżeńskim?",
+        ["Nie", "Tak"],
+        horizontal=True,
+    )
+    married = "Yes" if married_label == "Tak" else "No"
+
     applicant_income = st.number_input(
         "Miesięczny dochód netto wnioskodawcy",
         min_value=0,
         value=5000,
         step=500,
+        help="Wpisz miesięczny dochód w złotych.",
     )
 
     has_coapplicant = st.radio(
@@ -127,15 +270,14 @@ def get_applicant_data():
 
     if has_coapplicant == "Tak":
         coapplicant_income = st.number_input(
-            "Miesięczny dochód netto drugiego wnioskodawcy",
+            "Miesięczny dochód netto współwnioskodawcy",
             min_value=0,
             value=3000,
             step=500,
+            help="Wpisz miesięczny dochód współwnioskodawcy w złotych.",
         )
-        married = "Yes"
     else:
         coapplicant_income = 0
-        married = "No"
 
     employment_label = st.selectbox(
         "Forma zatrudnienia",
@@ -171,9 +313,11 @@ def get_applicant_data():
     )
 
     return {
+        "gender": gender,
+        "married": married,
         "applicant_income": applicant_income,
         "coapplicant_income": coapplicant_income,
-        "married": married,
+        "has_coapplicant": has_coapplicant == "Tak",
         "self_employed": self_employed,
         "education": education,
         "dependents": dependents,
@@ -185,10 +329,14 @@ def get_loan_data():
     st.header("Dane kredytu")
 
     loan_amount_full = st.number_input(
-        "Wnioskowana kwota kredytu",
+        "Wnioskowana kwota kredytu (zł)",
         min_value=0,
         value=120000,
         step=10000,
+        help=(
+            "Użytkownik wpisuje kwotę w złotych. Do modelu jest ona "
+            "przekazywana w tysiącach."
+        ),
     )
 
     loan_amount = loan_amount_full / 1000
@@ -247,42 +395,32 @@ def get_loan_data():
     }
 
 
-def get_demo_prediction(form_data):
-    """Zwraca przykładową predykcję przed podłączeniem modelu."""
-    is_accepted = (
-        form_data["credit_history"] == 1
-        and form_data["applicant_income"] >= 3000
-    )
-
-    prediction = "Y" if is_accepted else "N"
-    probability = 0.78 if is_accepted else 0.34
-
-    return prediction, probability
-
-
 def handle_prediction(model, form_data):
     """Obsługuje predykcję dla danych wpisanych przez użytkownika."""
-    comments = generate_comments(form_data)
-
     if model is None:
-        st.warning(
-            "Model nie został jeszcze podłączony. Wyświetlany jest przykładowy "
-            "wynik testowy interfejsu."
+        st.error(
+            "Predykcja jest niedostępna, ponieważ model nie został wczytany."
         )
-        prediction, probability = get_demo_prediction(form_data)
-    else:
-        input_data = prepare_input_data(form_data)
-        prediction = model.predict(input_data)[0]
+        return False
 
-        probability = None
-        if hasattr(model, "predict_proba"):
-            probability = model.predict_proba(input_data)[0][1]
+    validation_errors = validate_form_data(form_data)
+    if validation_errors:
+        for error in validation_errors:
+            st.error(error)
+        return False
+
+    try:
+        prediction, probability = predict_credit_decision(model, form_data)
+    except PredictionError as error:
+        st.error(str(error))
+        return False
 
     show_result(
         prediction=prediction,
         probability=probability,
-        comments=comments,
+        comments=generate_comments(form_data),
     )
+    return True
 
 
 def main():
@@ -295,14 +433,29 @@ def main():
 
     st.title("CreditCheck")
     st.write("Wypełnij dane, aby sprawdzić przewidywaną decyzję kredytową.")
+    st.info(
+        "Wynik ma charakter wyłącznie informacyjny. Nie jest ofertą, "
+        "rekomendacją ani oficjalną decyzją kredytową banku."
+    )
 
-    model = load_model()
+    try:
+        model = load_model()
+    except ModelLoadError as error:
+        model = None
+        st.error(str(error))
+        st.info(
+            "Formularz pozostaje dostępny, ale obliczenie wyniku będzie "
+            "możliwe dopiero po przywróceniu prawidłowego modelu."
+        )
 
     form_data = {}
     form_data.update(get_applicant_data())
     form_data.update(get_loan_data())
 
-    if st.button("Sprawdź decyzję kredytową"):
+    if st.button(
+        "Sprawdź decyzję kredytową",
+        disabled=model is None,
+    ):
         handle_prediction(model, form_data)
 
 
