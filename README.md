@@ -156,9 +156,13 @@ testowana na Linuxie, macOS etc. Pierwsze uruchomienie wymaga internetu w celu p
 - joblib,
 - Git i GitHub.
 
+## Ograniczenia
+
+- model wytrenowany na zagranicznym zbiorze danych, nieprzystosowanym do polskiego rynku.
+
 ## Podział pracy
 
-### Osoba 1 - Piotr Balcerzak
+### Piotr Balcerzak
 
 - przygotowanie i preprocessing datasetu,
 - analiza danych i wizualizacja wybranych zależności,
@@ -167,7 +171,7 @@ testowana na Linuxie, macOS etc. Pierwsze uruchomienie wymaga internetu w celu p
 - zapis wytrenowanego modelu do pliku `.pkl`,
 - przygotowanie dokumentacji modelu i analizy danych.
 
-### Osoba 2 - Patrycja Ługiewicz
+### Patrycja Ługiewicz
 
 - utworzenie i konfiguracja repozytorium Git,
 - przygotowanie struktury projektu,

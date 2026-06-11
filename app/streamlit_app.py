@@ -222,16 +222,8 @@ def show_result(prediction, probability, comments):
             "Szacowane prawdopodobieństwo akceptacji",
             f"{probability:.0%}",
         )
-        st.caption(
-            "Wartość oznacza ocenę modelu dla podanych danych, a nie "
-            "gwarancję uzyskania kredytu."
-        )
 
     st.subheader("Komentarz do podanych danych")
-    st.caption(
-        "Komentarze mają charakter informacyjny i nie są pełnym "
-        "wyjaśnieniem sposobu działania modelu."
-    )
     for comment in comments:
         st.write(f"• {comment}")
 
@@ -329,7 +321,7 @@ def get_loan_data():
     st.header("Dane kredytu")
 
     loan_amount_full = st.number_input(
-        "Wnioskowana kwota kredytu (zł)",
+        "Wnioskowana kwota kredytu",
         min_value=0,
         value=120000,
         step=10000,
@@ -433,10 +425,6 @@ def main():
 
     st.title("CreditCheck")
     st.write("Wypełnij dane, aby sprawdzić przewidywaną decyzję kredytową.")
-    st.info(
-        "Wynik ma charakter wyłącznie informacyjny. Nie jest ofertą, "
-        "rekomendacją ani oficjalną decyzją kredytową banku."
-    )
 
     try:
         model = load_model()
