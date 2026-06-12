@@ -29,7 +29,6 @@ FEATURE_NAMES = [
     "IncomeToLoanRatio",
 ]
 
-# LabelEncoder sorts category names alphabetically before assigning numbers.
 CATEGORY_ENCODINGS = {
     "Gender": {"Female": 0, "Male": 1},
     "Married": {"No": 0, "Yes": 1},
@@ -120,7 +119,7 @@ def prepare_input_data(form_data):
 
 
 def get_acceptance_probability(model, input_data):
-    """Return the probability for the class representing acceptance."""
+    """Zwraca prawdopodobieństwo klasy oznaczającej akceptację."""
     if not hasattr(model, "predict_proba"):
         return None
 
@@ -261,7 +260,6 @@ def get_applicant_data():
         min_value=0,
         value=5000,
         step=500,
-        help="Wpisz miesięczny dochód w złotych.",
     )
 
     has_coapplicant = st.radio(
@@ -276,7 +274,6 @@ def get_applicant_data():
             min_value=0,
             value=3000,
             step=500,
-            help="Wpisz miesięczny dochód współwnioskodawcy w złotych.",
         )
     else:
         coapplicant_income = 0
@@ -335,10 +332,6 @@ def get_loan_data():
         min_value=0,
         value=120000,
         step=10000,
-        help=(
-            "Użytkownik wpisuje kwotę w złotych. Do modelu jest ona "
-            "przekazywana w tysiącach."
-        ),
     )
 
     loan_amount = loan_amount_full / 1000

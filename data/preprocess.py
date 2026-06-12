@@ -27,8 +27,6 @@ def preprocess_data(df):
         df["Credit_History"].mode()[0]
     )
 
-    # Feature engineering
-
     df["TotalIncome"] = (
         df["ApplicantIncome"] +
         df["CoapplicantIncome"]
@@ -54,4 +52,3 @@ def preprocess_data(df):
         df[col] = encoder.fit_transform(df[col])
 
     return df
-

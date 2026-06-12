@@ -1,4 +1,4 @@
-"""Tests for the contract between the Streamlit form and the saved model."""
+"""Testy zgodności formularza Streamlit z zapisanym modelem."""
 
 from pathlib import Path
 import unittest
@@ -17,10 +17,10 @@ from app.streamlit_app import (
 
 
 class ModelIntegrationTest(unittest.TestCase):
-    """Verify preprocessing and prediction against the saved model."""
+    """Sprawdza przygotowanie danych i predykcję zapisanego modelu."""
 
     def setUp(self):
-        """Create representative data returned by the Streamlit form."""
+        """Tworzy przykładowe dane zwracane przez formularz Streamlit."""
         self.form_data = {
             "gender": "Male",
             "married": "No",
@@ -38,7 +38,7 @@ class ModelIntegrationTest(unittest.TestCase):
         }
 
     def test_prepare_input_data_matches_training_encoding(self):
-        """Form categories use the same numeric encoding as training."""
+        """Sprawdza zgodność kodowania formularza z kodowaniem treningowym."""
         input_data = prepare_input_data(self.form_data)
 
         self.assertEqual(list(input_data.columns), FEATURE_NAMES)
@@ -62,7 +62,7 @@ class ModelIntegrationTest(unittest.TestCase):
         )
 
     def test_prepare_input_data_uses_selected_gender(self):
-        """Gender selected in the form is passed to the model."""
+        """Sprawdza przekazanie do modelu płci wybranej w formularzu."""
         self.form_data["gender"] = "Female"
 
         input_data = prepare_input_data(self.form_data)
@@ -70,7 +70,7 @@ class ModelIntegrationTest(unittest.TestCase):
         self.assertEqual(input_data.iloc[0]["Gender"], 0)
 
     def test_validation_rejects_zero_values(self):
-        """Zero income and loan amount produce clear validation errors."""
+        """Sprawdza błędy walidacji dla zerowego dochodu i kwoty kredytu."""
         self.form_data["applicant_income"] = 0
         self.form_data["loan_amount_full"] = 0
         self.form_data["loan_amount"] = 0
@@ -80,7 +80,7 @@ class ModelIntegrationTest(unittest.TestCase):
         self.assertEqual(len(errors), 2)
 
     def test_zero_loan_amount_does_not_cause_division_error(self):
-        """Input preparation remains safe before validation is applied."""
+        """Sprawdza zabezpieczenie przed dzieleniem przez zero."""
         self.form_data["loan_amount_full"] = 0
         self.form_data["loan_amount"] = 0
 
@@ -89,7 +89,7 @@ class ModelIntegrationTest(unittest.TestCase):
         self.assertEqual(input_data.iloc[0]["IncomeToLoanRatio"], 0)
 
     def test_validation_requires_coapplicant_income(self):
-        """A declared coapplicant must have an entered income."""
+        """Sprawdza wymaganie dochodu zadeklarowanego współwnioskodawcy."""
         self.form_data["has_coapplicant"] = True
 
         errors = validate_form_data(self.form_data)
@@ -98,7 +98,7 @@ class ModelIntegrationTest(unittest.TestCase):
         self.assertIn("współwnioskodawcy", errors[0])
 
     def test_saved_model_accepts_form_data(self):
-        """The committed model accepts input and returns a valid result."""
+        """Sprawdza predykcję zapisanego modelu dla danych formularza."""
         model = load_model()
         input_data = prepare_input_data(self.form_data)
 
@@ -112,14 +112,14 @@ class ModelIntegrationTest(unittest.TestCase):
         self.assertLessEqual(probability, 1.0)
 
     def test_load_model_reports_missing_file(self):
-        """A missing model produces a controlled application error."""
+        """Sprawdza kontrolowany błąd dla brakującego pliku modelu."""
         missing_path = Path("model/does_not_exist.pkl")
 
         with self.assertRaisesRegex(ModelLoadError, "Nie znaleziono"):
             load_model(missing_path)
 
     def test_load_model_reports_corrupted_file(self):
-        """A corrupted model file produces a controlled application error."""
+        """Sprawdza kontrolowany błąd dla uszkodzonego pliku modelu."""
         model_path = Mock(spec=Path)
         model_path.is_file.return_value = True
 
@@ -133,7 +133,7 @@ class ModelIntegrationTest(unittest.TestCase):
                     load_model(model_path)
 
     def test_load_model_rejects_incompatible_object(self):
-        """A joblib file without the expected model contract is rejected."""
+        """Sprawdza odrzucenie pliku, który nie zawiera modelu."""
         model_path = Mock(spec=Path)
         model_path.is_file.return_value = True
 
@@ -146,7 +146,7 @@ class ModelIntegrationTest(unittest.TestCase):
                 load_model(model_path)
 
     def test_load_model_rejects_different_features(self):
-        """A model trained with different features is rejected."""
+        """Sprawdza odrzucenie modelu wykorzystującego inne cechy."""
         model_path = Mock(spec=Path)
         model_path.is_file.return_value = True
         incompatible_model = Mock()
@@ -169,7 +169,7 @@ class ModelIntegrationTest(unittest.TestCase):
         show_error,
         show_result,
     ):
-        """A model failure displays an error and no decision."""
+        """Sprawdza brak wyniku po wystąpieniu błędu predykcji."""
         failing_model = Mock()
         failing_model.predict.side_effect = ValueError("prediction failed")
 
@@ -187,7 +187,7 @@ class ModelIntegrationTest(unittest.TestCase):
         show_error,
         show_result,
     ):
-        """No model means no demonstration or fabricated decision."""
+        """Sprawdza brak fikcyjnego wyniku przy braku modelu."""
         result = handle_prediction(None, self.form_data)
 
         self.assertFalse(result)
