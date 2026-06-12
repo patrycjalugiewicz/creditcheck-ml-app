@@ -56,6 +56,8 @@ class ModelIntegrationTest(unittest.TestCase):
                 "Loan_Amount_Term": 360.0,
                 "Credit_History": 1.0,
                 "Property_Area": 2.0,
+                "TotalIncome": 5000.0,
+                "IncomeToLoanRatio": 5000.0 / 120.0,
             },
         )
 
@@ -76,6 +78,15 @@ class ModelIntegrationTest(unittest.TestCase):
         errors = validate_form_data(self.form_data)
 
         self.assertEqual(len(errors), 2)
+
+    def test_zero_loan_amount_does_not_cause_division_error(self):
+        """Input preparation remains safe before validation is applied."""
+        self.form_data["loan_amount_full"] = 0
+        self.form_data["loan_amount"] = 0
+
+        input_data = prepare_input_data(self.form_data)
+
+        self.assertEqual(input_data.iloc[0]["IncomeToLoanRatio"], 0)
 
     def test_validation_requires_coapplicant_income(self):
         """A declared coapplicant must have an entered income."""

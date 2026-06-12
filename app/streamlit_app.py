@@ -25,6 +25,8 @@ FEATURE_NAMES = [
     "Loan_Amount_Term",
     "Credit_History",
     "Property_Area",
+    "TotalIncome",
+    "IncomeToLoanRatio",
 ]
 
 # LabelEncoder sorts category names alphabetically before assigning numbers.
@@ -80,6 +82,12 @@ def load_model(model_path=MODEL_PATH):
 
 def prepare_input_data(form_data):
     """Przygotowuje dane wejściowe w formacie zgodnym z modelem."""
+    total_income = (
+        form_data["applicant_income"] + form_data["coapplicant_income"]
+    )
+    loan_amount = form_data["loan_amount"]
+    income_to_loan_ratio = total_income / loan_amount if loan_amount > 0 else 0
+
     input_data = pd.DataFrame(
         [
             {
@@ -96,12 +104,14 @@ def prepare_input_data(form_data):
                 ],
                 "ApplicantIncome": form_data["applicant_income"],
                 "CoapplicantIncome": form_data["coapplicant_income"],
-                "LoanAmount": form_data["loan_amount"],
+                "LoanAmount": loan_amount,
                 "Loan_Amount_Term": form_data["loan_term"],
                 "Credit_History": form_data["credit_history"],
                 "Property_Area": CATEGORY_ENCODINGS["Property_Area"][
                     form_data["property_area"]
                 ],
+                "TotalIncome": total_income,
+                "IncomeToLoanRatio": income_to_loan_ratio,
             }
         ],
         columns=FEATURE_NAMES,
