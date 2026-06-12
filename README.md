@@ -90,7 +90,7 @@ Przetestowano trzy modele uczenia maszynowego:
 
 Najlepsze wyniki uzyskał model GradientBoostingClassifier, osiągając skuteczność (Accuracy) na poziomie około 78.86%.
 
-Największy wpływ na decyzję modelu miały cechy:
+Najwyższą ważność według `feature_importances_` uzyskały cechy:
 
 - Credit_History,
 - TotalIncome,
@@ -141,8 +141,11 @@ creditcheck-ml-app/
 |   |-- __init__.py
 |   `-- streamlit_app.py
 |-- data/
-|   |-- raw/
-|   `-- processed/
+|   |-- __init__.py
+|   |-- preprocess.py
+|   `-- raw/
+|       |-- train_u6lujuX_CVtuZ9i.csv
+|       `-- test_Y3wMUE5_7gLdaTN.csv
 |-- docs/
 |   `-- Dokumentacja.docx
 |-- model/
@@ -175,7 +178,7 @@ Uruchomienie testów:
 Sprawdzenie kodu:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pylint app\streamlit_app.py model\train_model.py tests\test_model_integration.py
+.\.venv\Scripts\python.exe -m pylint app\streamlit_app.py data\preprocess.py model\train_model.py tests\test_model_integration.py
 ```
 
 W ostatniej lokalnej weryfikacji projekt uzyskał wynik pylint powyżej
