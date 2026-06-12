@@ -75,27 +75,27 @@ wnioskodawcy, parametrów kredytu oraz historii kredytowej.
 
 W procesie przygotowania danych:
 
-usunięto kolumnę Loan_ID,
-uzupełniono brakujące wartości za pomocą mediany lub wartości najczęściej występującej,
-zakodowano zmienne kategoryczne przy użyciu LabelEncoder,
-utworzono dodatkowe cechy:
-TotalIncome = ApplicantIncome + CoapplicantIncome,
-IncomeToLoanRatio = TotalIncome / LoanAmount.
+- usunięto kolumnę Loan_ID,
+- uzupełniono brakujące wartości za pomocą mediany lub wartości najczęściej występującej,
+- zakodowano zmienne kategoryczne przy użyciu LabelEncoder,
+- utworzono dodatkowe cechy:
+   - TotalIncome = ApplicantIncome + CoapplicantIncome,
+   - IncomeToLoanRatio = TotalIncome / LoanAmount.
 
 Przetestowano trzy modele uczenia maszynowego:
 
-Logistic Regression,
-Random Forest,
-Gradient Boosting.
+- Logistic Regression,
+- Random Forest,
+- Gradient Boosting.
 
 Najlepsze wyniki uzyskał model GradientBoostingClassifier, osiągając skuteczność (Accuracy) na poziomie około 78.86%.
 
 Największy wpływ na decyzję modelu miały cechy:
 
-Credit_History,
-TotalIncome,
-IncomeToLoanRatio,
-LoanAmount.
+- Credit_History,
+- TotalIncome,
+- IncomeToLoanRatio,
+- LoanAmount.
 
 ### Wektor wejściowy
 
