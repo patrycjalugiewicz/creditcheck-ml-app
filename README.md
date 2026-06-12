@@ -99,11 +99,33 @@ Największy wpływ na decyzję modelu miały cechy:
 
 ### Wektor wejściowy
 
-Do uzupelnienia
+Model wykorzystuje 13 cech wejściowych:
+
+- Gender,
+- Married,
+- Dependents,
+- Education,
+- Self_Employed,
+- ApplicantIncome,
+- CoapplicantIncome,
+- LoanAmount,
+- Loan_Amount_Term,
+- Credit_History,
+- Property_Area,
+- TotalIncome,
+- IncomeToLoanRatio.
+
+Dwie ostatnie cechy są generowane podczas preprocessingu danych i nie występują bezpośrednio w oryginalnym zbiorze danych.
 
 ### Wektor wyjściowy
 
-Do uzupelnienia
+Model zwraca binarną decyzję kredytową:
+
+- 0 – odrzucenie wniosku kredytowego,
+- 1 – akceptacja wniosku kredytowego.
+
+Dodatkowo aplikacja wykorzystuje metodę predict_proba(), dzięki której możliwe jest wyznaczenie prawdopodobieństwa 
+przyznania kredytu i przedstawienie użytkownikowi bardziej szczegółowej informacji o wyniku predykcji.
 
 ## Architektura
 
