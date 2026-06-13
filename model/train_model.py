@@ -1,7 +1,13 @@
-import pandas as pd
-import joblib
-import sys
+# pylint: disable=invalid-name
+"""
+Model treningowy dla aplikacji CreditCheck.
+Porównuje kilka modeli klasyfikacyjnych i zapisuje najlepszy model do pliku.
+"""
 import os
+import sys
+
+import joblib
+import pandas as pd
 
 sys.path.append(
     os.path.abspath(
@@ -23,6 +29,7 @@ from sklearn.metrics import (
 
 
 def load_data():
+    """Wczytuje dane treningowe."""
     df = pd.read_csv(
         "../data/raw/train_u6lujuX_CVtuZ9i.csv"
     )
@@ -34,7 +41,9 @@ def load_data():
 
     return df
 
+
 def split_data(df):
+    """Dzieli dane na zbiór treningowy i testowy."""
 
     X = df.drop("Loan_Status", axis=1)
     y = df["Loan_Status"]
@@ -50,6 +59,7 @@ def split_data(df):
 
 
 def train_models(X_train, X_test, y_train, y_test):
+    """Trenuje modele i wybiera najlepszy."""
 
     models = {
         "Logistic Regression": LogisticRegression(max_iter=5000),
@@ -93,6 +103,7 @@ def train_models(X_train, X_test, y_train, y_test):
 
 
 def save_model(model):
+    """Zapisuje model do pliku PKL."""
 
     joblib.dump(model, "credit_model.pkl")
 
@@ -100,6 +111,7 @@ def save_model(model):
 
 
 def test_saved_model():
+    """Wczytuje zapisany model i wykonuje przykładową predykcję."""
 
     loaded_model = joblib.load("credit_model.pkl")
 
@@ -129,6 +141,7 @@ def test_saved_model():
 
 
 def show_feature_importance(model, X):
+    """Wyświetla znaczenie cech wykorzystanych przez model."""
 
     print("\nWpływ cech:")
 
@@ -162,6 +175,7 @@ def show_feature_importance(model, X):
 
 
 def test_income_impact(model):
+    """Sprawdza wpływ dochodu na decyzję modelu."""
 
     print("\n" + "=" * 40)
     print("TEST WPŁYWU DOCHODU")
@@ -215,6 +229,7 @@ def test_income_impact(model):
 
 
 def test_credit_history(model):
+    """Sprawdza wpływ historii kredytowej na decyzję modelu."""
 
     print("\n" + "=" * 40)
     print("TEST CREDIT HISTORY")
@@ -268,6 +283,7 @@ def test_credit_history(model):
 
 
 def main():
+    """Uruchamia pełny proces trenowania, ewaluacji i zapisu modelu."""
 
     df = load_data()
 
